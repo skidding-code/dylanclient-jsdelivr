@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DylanClient 26.3</title>
+<style>
+html,body{height:100%;margin:0}
+body{background:radial-gradient(circle at 50% 35%,#2a1414,#0b0b0d 70%);color:#eee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center}
+#box{width:min(420px,88vw);text-align:center}
+h1{margin:0 0 6px;font-size:32px;letter-spacing:.5px}
+h1 b{color:#e0473b}
+p{margin:0;color:#9a9aa3;font-size:14px}
+#track{height:8px;margin:22px 0 12px;border-radius:4px;background:#24242a;overflow:hidden}
+#bar{height:100%;width:0;background:linear-gradient(90deg,#b5352b,#ff6a4d);transition:width .2s}
+.bad #bar{background:#ef4444}
+.bad #status{color:#f87171}
+#retry{display:none;margin-top:16px;padding:8px 18px;border:0;border-radius:6px;background:#e0473b;color:#fff;font-size:14px;cursor:pointer}
+a{color:#9a9aa3}
+#foot{margin-top:28px;font-size:12px}
+</style>
+</head>
+<body>
+<div id="box">
+<h1><b>Dylan</b>Client</h1>
+<p>DylanClient 26.3 from jsDelivr</p>
+<div id="track"><div id="bar"></div></div>
+<p id="status">Connecting to jsDelivr</p>
+<button id="retry" onclick="location.reload()">Try again</button>
+<p id="foot"><a href="https://dylanclient.site/" target="_blank" rel="noopener">dylanclient.site</a></p>
+</div>
+<script>
+(function () {
+  var BASE = "https://cdn.jsdelivr.net/gh/skidding-code/dylanclient-jsdelivr@main/";
+  var NAME = "eaglercraft-26.3-r2-music.html";
+  var PARTS = 8;
+  var SIZE = 142534429;
+  var bar = document.getElementById('bar');
+  var status = document.getElementById('status');
+  var mb = function (n) { return (n / 1048576).toFixed(1); };
+  var got = [];
+  var update = function () {
+    var done = got.reduce(function (a, b) { return a + b; }, 0);
+    bar.style.width = (100 * done / SIZE).toFixed(1) + '%';
+    status.textContent = 'Downloading ' + mb(done) + ' of ' + mb(SIZE) + ' MB';
+  };
+  var part = function (i) {
+    got[i] = 0;
+    return fetch(BASE + NAME + '.part' + (i + 1) + '.dylan').then(function (response) {
+      if (!response.ok) throw new Error('part ' + (i + 1) + ' failed (HTTP ' + response.status + ')');
+      var reader = response.body.getReader();
+      var chunks = [];
+      var pump = function () {
+        return reader.read().then(function (r) {
+          if (r.done) return new Blob(chunks);
+          chunks.push(r.value);
+          got[i] += r.value.length;
+          update();
+          return pump();
+        });
+      };
+      return pump();
+    });
+  };
+  var all = [];
+  for (var i = 0; i < PARTS; i++) all.push(part(i));
+  Promise.all(all).then(function (blobs) {
+    status.textContent = 'Starting DylanClient 26.3';
+    return new Blob(blobs).text();
+  }).then(function (html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }).catch(function (error) {
+    document.getElementById('box').className = 'bad';
+    status.textContent = 'Could not load DylanClient 26.3: ' + error.message;
+    document.getElementById('retry').style.display = 'inline-block';
+  });
+})();
+</script>
+</body>
+</html>
