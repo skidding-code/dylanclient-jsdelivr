@@ -31,43 +31,29 @@ a{color:#9a9aa3}
 </div>
 <script>
 (function () {
-  var BASE = "https://cdn.jsdelivr.net/gh/skidding-code/dylanclient-jsdelivr@main/";
-  var NAME = "eaglercraft-26.3-r2-music.html";
-  var PARTS = 8;
-  var SIZE = 142534429;
+  var URL_PAGE = "https://cdn.jsdelivr.net/gh/skidding-code/dylanclient-jsdelivr@main/index.html";
+  var SIZE = 2583945;
   var bar = document.getElementById('bar');
   var status = document.getElementById('status');
   var mb = function (n) { return (n / 1048576).toFixed(1); };
-  var got = [];
-  var update = function () {
-    var done = got.reduce(function (a, b) { return a + b; }, 0);
-    bar.style.width = (100 * done / SIZE).toFixed(1) + '%';
-    status.textContent = 'Downloading ' + mb(done) + ' of ' + mb(SIZE) + ' MB';
-  };
-  var part = function (i) {
-    got[i] = 0;
-    return fetch(BASE + NAME + '.part' + (i + 1) + '.dylan').then(function (response) {
-      if (!response.ok) throw new Error('part ' + (i + 1) + ' failed (HTTP ' + response.status + ')');
-      var reader = response.body.getReader();
-      var chunks = [];
-      var pump = function () {
-        return reader.read().then(function (r) {
-          if (r.done) return new Blob(chunks);
-          chunks.push(r.value);
-          got[i] += r.value.length;
-          update();
-          return pump();
-        });
-      };
-      return pump();
-    });
-  };
-  var all = [];
-  for (var i = 0; i < PARTS; i++) all.push(part(i));
-  Promise.all(all).then(function (blobs) {
-    status.textContent = 'Starting DylanClient 26.3';
-    return new Blob(blobs).text();
+  fetch(URL_PAGE).then(function (response) {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    var reader = response.body.getReader();
+    var chunks = [];
+    var got = 0;
+    var pump = function () {
+      return reader.read().then(function (r) {
+        if (r.done) return new Blob(chunks).text();
+        chunks.push(r.value);
+        got += r.value.length;
+        bar.style.width = Math.min(100, 100 * got / SIZE).toFixed(1) + '%';
+        status.textContent = 'Downloading ' + mb(got) + ' of ' + mb(SIZE) + ' MB';
+        return pump();
+      });
+    };
+    return pump();
   }).then(function (html) {
+    status.textContent = 'Starting DylanClient 26.3';
     document.open();
     document.write(html);
     document.close();
