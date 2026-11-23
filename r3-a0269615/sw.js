@@ -1,13 +1,31 @@
-const VERSION = "6c8872b8254b3a77";
-const CHUNKED = {"classes.wasm":{"parts":7,"size":124609988,"type":"application/wasm"},"music.dylan":{"parts":3,"size":40641269,"type":"application/octet-stream"},"server-worker.wasm":{"parts":3,"size":45384054,"type":"application/wasm"},"sounds.dylan":{"parts":2,"size":26404673,"type":"application/octet-stream"},"via-worker.wasm":{"parts":2,"size":20216348,"type":"application/wasm"}};
+const VERSION = "a0269615fb573764";
+const CHUNKED = {"classes.wasm":{"parts":7,"size":124609988,"part":19000000,"type":"application/wasm"},"music.dylan":{"parts":3,"size":40641269,"part":19000000,"type":"application/octet-stream"},"server-worker.wasm":{"parts":3,"size":45384054,"part":19000000,"type":"application/wasm"},"sounds.dylan":{"parts":2,"size":26404673,"part":19000000,"type":"application/octet-stream"},"via-worker.wasm":{"parts":2,"size":20216348,"part":19000000,"type":"application/wasm"}};
 function dylanJoin(base, name, info, fetcher) {
+  var LATER = 'DylanClient is still updating on jsDelivr. Please check back in a couple of hours.';
+  var later = function (detail) {
+    try {
+      if (typeof document !== 'undefined' && !document.getElementById('dylan-later')) {
+        var box = document.createElement('div');
+        box.id = 'dylan-later';
+        box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:#0a0f18;color:#fff;font:20px/1.4 system-ui,sans-serif;text-align:center';
+        box.textContent = LATER;
+        (document.body || document.documentElement).appendChild(box);
+      }
+    } catch (ignored) {}
+    return new Error(LATER + ' (' + detail + ')');
+  };
   var queue = [];
   var next = 1;
   var reader = null;
+  var current = 0;
+  var got = 0;
+  var expect = function (index) { return info.part ? Math.min(info.part, info.size - (index - 1) * info.part) : -1; };
   var get = function (index) {
-    var p = fetcher(new URL(name + '.part' + index + '.dylan', base).href).then(function (response) {
-      if (!response.ok) throw new Error(name + ' part ' + index + ': HTTP ' + response.status);
-      return response;
+    var p = fetcher(new URL(name + '.part' + index + '.dylan', base).href, { cache: 'no-cache' }).then(function (response) {
+      if (!response.ok) throw later(name + ' part ' + index + ': HTTP ' + response.status);
+      return { response: response, index: index };
+    }, function (error) {
+      throw error && /couple of hours/.test(error.message) ? error : later(name + ' part ' + index + ': ' + error);
     });
     p.catch(function () {});
     return p;
@@ -19,14 +37,19 @@ function dylanJoin(base, name, info, fetcher) {
       var step = function () {
         if (!reader) {
           if (!queue.length) { controller.close(); return; }
-          return queue.shift().then(function (response) { fill(); reader = response.body.getReader(); return step(); });
+          return queue.shift().then(function (part) { fill(); current = part.index; got = 0; reader = part.response.body.getReader(); return step(); });
         }
         return reader.read().then(function (chunk) {
-          if (chunk.done) { reader = null; return step(); }
+          if (chunk.done) {
+            reader = null;
+            if (expect(current) >= 0 && got !== expect(current)) throw later(name + ' part ' + current + ' has the wrong size');
+            return step();
+          }
+          got += chunk.value.length;
           controller.enqueue(chunk.value);
         });
       };
-      return Promise.resolve(step()).catch(function (error) { controller.error(error); });
+      return Promise.resolve(step()).catch(function (error) { controller.error(error && /couple of hours/.test(error.message) ? error : later(name + ': ' + error)); });
     }
   });
   return new Response(body, { status: 200, headers: { 'Content-Type': info.type, 'Content-Length': String(info.size) } });
