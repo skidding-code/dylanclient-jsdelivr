@@ -1,0 +1,31 @@
+{
+  "format": 1,
+  "id": "actionandstuff",
+  "version": "0.7.0",
+  "key": "c19dec0d70a2b132",
+  "assets": {
+    "file": "assets.zip",
+    "parts": 3,
+    "size": 46114250
+  },
+  "packs": [
+    {
+      "id": "ans_textures",
+      "path": "resourcepacks/ans_textures",
+      "name": "Actions & Stuff Textures",
+      "default": true
+    },
+    {
+      "id": "ans_colors",
+      "path": "resourcepacks/ans_colors",
+      "name": "Actions & Stuff Colors",
+      "default": true
+    },
+    {
+      "id": "ans_water",
+      "path": "resourcepacks/ans_water",
+      "name": "Actions & Stuff Clear Water",
+      "default": false
+    }
+  ]
+}

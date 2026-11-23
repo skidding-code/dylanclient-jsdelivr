@@ -1,5 +1,5 @@
-const VERSION = "e7cfcd1f361d6c8b";
-const CHUNKED = {"classes.wasm":{"parts":6,"size":113486190,"type":"application/wasm"},"music.dylan":{"parts":3,"size":40641269,"type":"application/octet-stream"},"server-worker.wasm":{"parts":3,"size":44551516,"type":"application/wasm"},"sounds.dylan":{"parts":2,"size":26404673,"type":"application/octet-stream"},"via-worker.wasm":{"parts":2,"size":20216359,"type":"application/wasm"}};
+const VERSION = "6c8872b8254b3a77";
+const CHUNKED = {"classes.wasm":{"parts":7,"size":124609988,"type":"application/wasm"},"music.dylan":{"parts":3,"size":40641269,"type":"application/octet-stream"},"server-worker.wasm":{"parts":3,"size":45384054,"type":"application/wasm"},"sounds.dylan":{"parts":2,"size":26404673,"type":"application/octet-stream"},"via-worker.wasm":{"parts":2,"size":20216348,"type":"application/wasm"}};
 function dylanJoin(base, name, info, fetcher) {
   var queue = [];
   var next = 1;
@@ -52,8 +52,15 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const base = scope();
   if (url.origin !== base.origin || !url.pathname.startsWith(base.pathname)) return;
-  const name = decodeURIComponent(url.pathname.slice(base.pathname.length));
-  if (event.request.mode === 'navigate' && (name === '' || name.endsWith('.html'))) { event.respondWith(page(new URL(name || 'index.html', base))); return; }
+  let name;
+  try { name = decodeURIComponent(url.pathname.slice(base.pathname.length)); } catch (error) { return; }
+  if (event.request.mode === 'navigate') {
+    if (name !== '' && !/^[A-Za-z0-9_.-]+\.html$/.test(name)) return;
+    const target = new URL(name || 'index.html', base);
+    if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname) || target.pathname.slice(base.pathname.length).includes('/')) return;
+    event.respondWith(page(target));
+    return;
+  }
   if (event.request.method !== 'GET') return;
   if (Object.prototype.hasOwnProperty.call(CHUNKED, name)) { event.respondWith(dylanJoin(base, name, CHUNKED[name], fetch)); return; }
   if (name.endsWith('.wasm')) event.respondWith(typed(event.request, 'application/wasm'));
