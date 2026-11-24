@@ -1,0 +1,11 @@
+{
+ "scan": false,
+ "enabled": [],
+ "optional": [
+  {
+   "file": "Fresh Animations 1.11.2.zip",
+   "url": "https://cdn.modrinth.com/data/50dA9Sha/versions/xfE3qfr5/FreshAnimations_v1.11.2_26.1%2B.zip",
+   "version": "c9be22df370bc8a0"
+  }
+ ]
+}
